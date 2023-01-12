@@ -8,7 +8,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_PREFIX_PATH "E:/Qt/6.3.1/msvc2019_64/lib/cmake")
@@ -34,6 +34,10 @@ file(GLOB PROJECT_SOURCES
         "${PROJECT_SOURCE_DIR}/ServerManagerDialog/*.h"
         "${PROJECT_SOURCE_DIR}/ServerManagerDialog/*.cpp"
         "${PROJECT_SOURCE_DIR}/ServerManagerDialog/*.ui"
+
+        "${PROJECT_SOURCE_DIR}/LocalServerManager/*.h"
+        "${PROJECT_SOURCE_DIR}/LocalServerManager/*.cpp"
+        "${PROJECT_SOURCE_DIR}/LocalServerManager/*.ui"
 
         "${PROJECT_SOURCE_DIR}/*.h"
         "${PROJECT_SOURCE_DIR}/*.cpp"

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <vector>
+#include <unordered_map>
 
 #include "./include/definitions.h"
 
@@ -26,6 +27,6 @@ public:
 private:
     Ui::MainWindow *ui;
 
-    std::vector<ServerInfo> serverInfos;
+    std::unordered_map<std::string, ServerInfo> serverInfos;
 };
 #endif // MAINWINDOW_H

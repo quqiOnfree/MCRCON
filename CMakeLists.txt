@@ -19,6 +19,22 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 set(TS_FILES MCRCON_zh_CN.ts)
 
 file(GLOB PROJECT_SOURCES
+        "${PROJECT_SOURCE_DIR}/AddServerDialog/*.h"
+        "${PROJECT_SOURCE_DIR}/AddServerDialog/*.cpp"
+        "${PROJECT_SOURCE_DIR}/AddServerDialog/*.ui"
+
+        "${PROJECT_SOURCE_DIR}/include/*.h"
+        "${PROJECT_SOURCE_DIR}/include/*.cpp"
+        "${PROJECT_SOURCE_DIR}/include/*.ui"
+
+        "${PROJECT_SOURCE_DIR}/MainWindow/*.h"
+        "${PROJECT_SOURCE_DIR}/MainWindow/*.cpp"
+        "${PROJECT_SOURCE_DIR}/MainWindow/*.ui"
+
+        "${PROJECT_SOURCE_DIR}/ServerManagerDialog/*.h"
+        "${PROJECT_SOURCE_DIR}/ServerManagerDialog/*.cpp"
+        "${PROJECT_SOURCE_DIR}/ServerManagerDialog/*.ui"
+
         "${PROJECT_SOURCE_DIR}/*.h"
         "${PROJECT_SOURCE_DIR}/*.cpp"
         "${PROJECT_SOURCE_DIR}/*.ui"

@@ -1,10 +1,10 @@
-#include "servermanagedialog.h"
+﻿#include "servermanagedialog.h"
 #include "ui_servermanagedialog.h"
 
 #include <QMessageBox>
 #include <QObject>
 
-#include "addserverdialog.h"
+#include "./AddServerDialog/addserverdialog.h"
 
 ServerManageDialog::ServerManageDialog(std::vector<ServerInfo>* infos) :
     ui(new Ui::ServerManageDialog)

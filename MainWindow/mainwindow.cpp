@@ -1,11 +1,11 @@
-#include "mainwindow.h"
+﻿#include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
 #include <QObject>
 #include <QMessageBox>
 
-#include "servermanagedialog.h"
-#include "addserverdialog.h"
+#include "./ServerManagerDialog/servermanagedialog.h"
+#include "./AddServerDialog/addserverdialog.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

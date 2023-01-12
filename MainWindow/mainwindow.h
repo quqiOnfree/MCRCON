@@ -1,10 +1,10 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
 #include <vector>
 
-#include "definitions.h"
+#include "./include/definitions.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }

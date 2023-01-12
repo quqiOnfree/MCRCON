@@ -1,10 +1,10 @@
-#ifndef SERVERMANAGEDIALOG_H
+﻿#ifndef SERVERMANAGEDIALOG_H
 #define SERVERMANAGEDIALOG_H
 
 #include <QDialog>
 #include <vector>
 
-#include "definitions.h"
+#include "./include/definitions.h"
 
 namespace Ui {
 class ServerManageDialog;

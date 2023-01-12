@@ -1,10 +1,10 @@
-#ifndef ADDSERVERDIALOG_H
+﻿#ifndef ADDSERVERDIALOG_H
 #define ADDSERVERDIALOG_H
 
 #include <QDialog>
 #include <vector>
 
-#include "definitions.h"
+#include "./include/definitions.h"
 
 namespace Ui {
 class AddServerDialog;

@@ -6,7 +6,14 @@
 LocalServerManager::LocalServerManager(ServerInfo& info)
 	: ui(new Ui::LocalServerManager), m_info(info)
 {
+    ui->setupUi(this);
 
+    ui->lineEdit->setText(m_info.name);
+    ui->lineEdit_2->setText(m_info.ip);
+    ui->spinBox->setValue(int(m_info.port));
+    ui->lineEdit_4->setText(m_info.passWord);
+
+    QObject::connect(ui->pushButton, &QPushButton::clicked, this, &LocalServerManager::enter);
 }
 
 void LocalServerManager::enter()

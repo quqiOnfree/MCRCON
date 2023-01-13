@@ -8,29 +8,48 @@
 #include "./AddServerDialog/addserverdialog.h"
 #include "./LocalServerManager/localservermanager.h"
 
-Manage::Manage(ServerInfo info, QFrame* frame, QVBoxLayout* verticalLayout, QLabel* label)
+Manage::Manage(ServerInfo info, QFrame* frame, QVBoxLayout* verticalLayout, QLabel* label, QWidget* widget, std::unordered_map<std::string, ServerInfo>* infos)
 {
     m_info = info;
     m_frame = frame;
     m_verticalLayout = verticalLayout;
     m_label = label;
+    m_widget = widget;
+    m_infos = infos;
 }
 
 void Manage::manageServer()
 {
-    ServerInfo serverInfo;
+    ServerInfo serverInfo = m_info;
     LocalServerManager LSM(serverInfo);
     if (LSM.exec() != QDialog::Accepted)
     {
         return;
     }
 
-
+    if (m_infos->find(m_info.name.toLocal8Bit().data()) != m_infos->end())
+    {
+        m_infos->erase(m_infos->find(m_info.name.toLocal8Bit().data()));
+        (*m_infos)[serverInfo.name.toLocal8Bit().data()] = serverInfo;
+        m_label->setText(serverInfo.name);
+        m_info = serverInfo;
+    }
 }
 
 void Manage::removeServer()
 {
+    if (QMessageBox::warning(m_widget, "警告", "确定删除吗？这个服务器将会失去很久很久！", "确定", "取消", "", 1) == QDialog::Accepted)
+    {
+        return;
+    }
 
+    if (m_infos->find(m_info.name.toLocal8Bit().data()) != m_infos->end())
+    {
+        m_infos->erase(m_infos->find(m_info.name.toLocal8Bit().data()));
+    }
+
+    m_verticalLayout->removeWidget(m_frame);
+    delete m_frame;
 }
 
 ServerManageDialog::ServerManageDialog(std::unordered_map<std::string, ServerInfo>* infos) :
@@ -40,7 +59,7 @@ ServerManageDialog::ServerManageDialog(std::unordered_map<std::string, ServerInf
 
     for (auto i = m_infos->begin(); i != m_infos->end(); i++)
     {
-        this->addManageServer(ui->scrollAreaWidgetContents, ui->verticalLayout, i->second);
+        m_infoClasses.push_back(this->addManageServer(ui->scrollAreaWidgetContents, ui->verticalLayout, i->second));
     }
 
     QObject::connect(ui->pushButton, &QPushButton::clicked, this, &ServerManageDialog::addServer);
@@ -63,11 +82,11 @@ void ServerManageDialog::addServer()
 
     (*m_infos)[serverInfo.name.toLocal8Bit().data()] = serverInfo;
 
-    this->addManageServer(ui->scrollAreaWidgetContents, ui->verticalLayout, serverInfo);
+    m_infoClasses.push_back(this->addManageServer(ui->scrollAreaWidgetContents, ui->verticalLayout, serverInfo));
     m_hasChange = true;
 }
 
-void ServerManageDialog::addManageServer(QWidget* content, QVBoxLayout* verticalLayout, const ServerInfo& serverInfo)
+Manage* ServerManageDialog::addManageServer(QWidget* content, QVBoxLayout* verticalLayout, const ServerInfo& serverInfo)
 {
     QFrame* frame = new QFrame(content);
     frame->setObjectName(QString::fromUtf8("frame"));
@@ -97,7 +116,13 @@ void ServerManageDialog::addManageServer(QWidget* content, QVBoxLayout* vertical
 
     horizontalLayout->addWidget(pushButton);
 
+    Manage* manager = new Manage(serverInfo, frame, verticalLayout, label, this, m_infos);
+    QObject::connect(pushButton_2, &QPushButton::clicked, manager, &Manage::manageServer);
+    QObject::connect(pushButton, &QPushButton::clicked, manager, &Manage::removeServer);
+
     verticalLayout->insertWidget(0, frame);
+
+    return manager;
 }
 
 void ServerManageDialog::closeEvent(QCloseEvent* event)
@@ -115,4 +140,9 @@ void ServerManageDialog::closeEvent(QCloseEvent* event)
 ServerManageDialog::~ServerManageDialog()
 {
     delete ui;
+
+    for (auto i = m_infoClasses.begin(); i != m_infoClasses.end(); i++)
+    {
+        delete* i;
+    }
 }

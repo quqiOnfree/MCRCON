@@ -18,6 +18,7 @@ public:
     AddServerDialog(ServerInfo& info);
     ~AddServerDialog();
 
+public slots:
     void enter();
 
 private:

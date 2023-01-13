@@ -17,6 +17,7 @@ public:
 	LocalServerManager(ServerInfo& info);
 	~LocalServerManager();
 
+public slots:
 	void enter();
 
 private:

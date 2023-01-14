@@ -8,7 +8,8 @@
 #include "./AddServerDialog/addserverdialog.h"
 #include "./LocalServerManager/localservermanager.h"
 
-Manage::Manage(ServerInfo info, QFrame* frame, QVBoxLayout* verticalLayout, QLabel* label, QWidget* widget, std::unordered_map<std::string, ServerInfo>* infos)
+Manage::Manage(ServerInfo info, QFrame* frame, QVBoxLayout* verticalLayout, QLabel* label, QWidget* widget, std::unordered_map<std::string, ServerInfo>* infos, bool& hasChange)
+    : m_hasChange(hasChange)
 {
     m_info = info;
     m_frame = frame;
@@ -33,6 +34,7 @@ void Manage::manageServer()
         (*m_infos)[serverInfo.name.toLocal8Bit().data()] = serverInfo;
         m_label->setText(serverInfo.name);
         m_info = serverInfo;
+        m_hasChange = true;
     }
 }
 
@@ -50,6 +52,7 @@ void Manage::removeServer()
 
     m_verticalLayout->removeWidget(m_frame);
     delete m_frame;
+    m_hasChange = true;
 }
 
 ServerManageDialog::ServerManageDialog(std::unordered_map<std::string, ServerInfo>* infos) :
@@ -116,7 +119,7 @@ Manage* ServerManageDialog::addManageServer(QWidget* content, QVBoxLayout* verti
 
     horizontalLayout->addWidget(pushButton);
 
-    Manage* manager = new Manage(serverInfo, frame, verticalLayout, label, this, m_infos);
+    Manage* manager = new Manage(serverInfo, frame, verticalLayout, label, this, m_infos, m_hasChange);
     QObject::connect(pushButton_2, &QPushButton::clicked, manager, &Manage::manageServer);
     QObject::connect(pushButton, &QPushButton::clicked, manager, &Manage::removeServer);
 

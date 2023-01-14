@@ -21,7 +21,7 @@ class Manage : public QObject
     Q_OBJECT;
 
 public:
-    Manage(ServerInfo info, QFrame* frame, QVBoxLayout* verticalLayout, QLabel* label, QWidget* widget, std::unordered_map<std::string, ServerInfo>* infos);
+    Manage(ServerInfo info, QFrame* frame, QVBoxLayout* verticalLayout, QLabel* label, QWidget* widget, std::unordered_map<std::string, ServerInfo>* infos, bool& hasChange);
 
 public slots:
     void manageServer();
@@ -34,6 +34,7 @@ private:
     QLabel* m_label;
     QWidget* m_widget;
     std::unordered_map<std::string, ServerInfo>* m_infos;
+    bool& m_hasChange;
 };
 
 class ServerManageDialog : public QDialog

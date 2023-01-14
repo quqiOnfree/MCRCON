@@ -3,15 +3,28 @@
 
 #include <QObject>
 #include <QMessageBox>
+#include <QNetworkProxy>
+#include <QHostInfo>
+#include <QFileDialog>
+
+#include <fstream>
+#include <ctime>
+#include <random>
+#include <memory>
 
 #include "./ServerManagerDialog/servermanagedialog.h"
 #include "./AddServerDialog/addserverdialog.h"
+#include "./Json/Json.h"
 
 RunServer::RunServer(const ServerInfo& info)
-    : QWidget(nullptr)
+    : QWidget(nullptr),
+    m_loggin(false)
 {
     m_info = info;
     m_client = new QTcpSocket(this);
+
+    std::mt19937 mt(std::time(nullptr));
+    m_id = mt();
 
     {
         QVBoxLayout* verticalLayout = new QVBoxLayout(this);
@@ -128,10 +141,23 @@ RunServer::RunServer(const ServerInfo& info)
         
             pushButton->setText("连接");
             pushButton_2->setText("运行");
+
+            QObject::connect(pushButton, &QPushButton::clicked, this, &RunServer::connectServer);
+            pushButton_2->setEnabled(false);
+
+            m_connectPushButton = pushButton;
+            m_sendMessagePushButton = pushButton_2;
+            m_textEdit = textEdit;
+            m_textBrowser = textBrowser;
         }
 
         verticalLayout->addWidget(frame);
     }
+
+    QObject::connect(m_client, &QAbstractSocket::errorOccurred, this, &RunServer::error);
+    QObject::connect(m_client, &QTcpSocket::connected, this, &RunServer::connectedServer);
+    QObject::connect(m_client, &QTcpSocket::readyRead, this, &RunServer::receiveMessage);
+    QObject::connect(m_sendMessagePushButton, &QPushButton::clicked, this, &RunServer::sendCommand);
 }
 
 RunServer::~RunServer()
@@ -142,24 +168,192 @@ RunServer::~RunServer()
     }
 }
 
+void RunServer::writeFunc(const std::string& command, int rcon)
+{
+    int size = sizeof(int) * 2 + command.size() + 2;
+
+    RCONDataPackage* packet = (RCONDataPackage*)new unsigned char[size + sizeof(int)] {0};
+
+    packet->size = size;
+    packet->requestID = m_id;
+    packet->type = rcon;
+
+    std::memcpy(packet->data, command.data(), command.size());
+
+    auto str = std::string(reinterpret_cast<char*>(packet), size + sizeof(int));
+
+    m_client->write(str.data(), str.size());
+
+    delete[](unsigned char*)packet;
+}
+
 void RunServer::connectServer()
 {
+    auto ipAddrIsOK = [](const QString & ip)
+    {
+        if (ip.isEmpty())
+        {
+            return false;
+        }
 
+        QStringList list = ip.split('.');
+        if (list.size() != 4)
+        {
+            return false;
+        }
+
+        for (const auto& num : list)
+        {
+            bool ok = false;
+            int temp = num.toInt(&ok);
+            if (!ok || temp < 0 || temp > 255)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    m_connectPushButton->setEnabled(false);
+    //m_client->setProxy(QNetworkProxy::NoProxy);
+    m_client->connectToHost(m_info.ip, m_info.port);
+    if (!m_client->waitForConnected(5000))
+    {
+        m_client->errorOccurred(QAbstractSocket::SocketError());
+        m_client->disconnectFromHost();
+    }
 }
 
 void RunServer::disconnectServer()
 {
-
+    
 }
 
 void RunServer::sendCommand()
 {
+    static bool firstMessage = true;
 
+    if (!firstMessage)
+    {
+        auto first = m_stringQueue.front();
+        m_stringQueue.pop();
+        writeFunc(first.toStdString(), 2);
+        if (m_stringQueue.empty())
+        {
+            firstMessage = true;
+        }
+        return;
+    }
+
+    m_textBrowser->clear();
+
+    if (!m_loggin)
+    {
+        writeFunc(m_info.passWord.toStdString(), 3);
+        return;
+    }
+
+    auto text = m_textEdit->toPlainText().split("\n");
+
+    m_sendMessagePushButton->setEnabled(false);
+
+    for (auto i = text.begin(); i != text.end(); i++)
+    {
+        if (i->size())
+            m_stringQueue.push(*i);
+    }
+
+    if (firstMessage)
+    {
+        auto first = m_stringQueue.front();
+        m_stringQueue.pop();
+        writeFunc(first.toStdString(), 2);
+        firstMessage = false;
+        if (m_stringQueue.empty())
+        {
+            firstMessage = true;
+        }
+        return;
+    }
 }
 
 void RunServer::receiveMessage()
 {
+    auto readFunc = [this](const std::string& data, bool* get, int* type)
+    {
+        RCONDataPackage* packet = (RCONDataPackage*)new unsigned char[data.size() + 1] {0};
 
+        std::memcpy(packet, data.data(), data.size());
+
+        if (packet->requestID == m_id)
+        {
+            *get = true;
+        }
+        else
+        {
+            *get = false;
+        }
+
+        *type = packet->type;
+
+        std::string reString(reinterpret_cast<char*>(packet->data), data.size() - sizeof(int) * 3 - 2);
+        delete[] reinterpret_cast<unsigned char*>(packet);
+
+        return reString;
+    };
+
+    auto buffer = m_client->readAll();
+    bool a;
+    int b;
+
+    m_sendMessagePushButton->setEnabled(true);
+
+    if (m_loggin)
+    {
+        std::string get = readFunc(std::string(buffer.data(), buffer.size()), &a, &b);
+        if (get.empty() && a)
+        {
+            m_textBrowser->append("true");
+        }
+        else
+        {
+            m_textBrowser->append(get.data());
+        }
+    }
+    else
+    {
+        readFunc(std::string(buffer.data(), buffer.size()), &a, &b);
+        if (a)
+        {
+            m_loggin = true;
+            QMessageBox::information(this, "信息", "连接RCON成功");
+        }
+        else
+        {
+            QMessageBox::warning(this, "警告", "密码错误！");
+        }
+    }
+
+    if (!m_stringQueue.empty())
+    {
+        RunServer::sendCommand();
+    }
+   
+}
+
+void RunServer::error(QAbstractSocket::SocketError)
+{
+    m_client->disconnectFromHost();
+    QMessageBox::warning(this, "警告", "无法连接到服务器：" + m_client->errorString());
+    m_connectPushButton->setEnabled(true);
+    m_sendMessagePushButton->setEnabled(false);
+}
+
+void RunServer::connectedServer()
+{
+    m_sendMessagePushButton->setEnabled(true);
+    RunServer::sendCommand();
 }
 
 OpenServer::OpenServer(const ServerInfo& info, QWidget* widget, QVBoxLayout* verticalLayout, QTabWidget* tabWidget)
@@ -204,27 +398,30 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->pushButton_4, &QPushButton::clicked, this, &MainWindow::manageServer);
     QObject::connect(ui->pushButton_3, &QPushButton::clicked, this, &MainWindow::addServer);
 
+    QObject::connect(ui->actionsave_configure, &QAction::triggered, this, &MainWindow::saveConfig);
+    QObject::connect(ui->actionopen_configure, &QAction::triggered, this, &MainWindow::readConfig);
+
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(closeTab(int)));
+
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tab_2));
 }
 
 void MainWindow::flashServerList()
 {
-    auto list = ui->verticalLayout_6->children();
+    size_t size = ui->verticalLayout_6->layout()->count();
 
-    for (auto i = list.begin(); i != list.end(); i++)
+    for (size_t i = 0; i < size - 1; i++)
     {
-        if (i + 1 == list.end())
-            break;
-        if (reinterpret_cast<QWidget*>(*i) == nullptr)
-            continue;
-
-        ui->verticalLayout_6->removeWidget(reinterpret_cast<QWidget*>(*i));
-        delete* i;
+        auto item = ui->verticalLayout_6->layout()->itemAt(i);
+        auto itemWidget = item->widget();
+        ui->verticalLayout_6->removeItem(item);
+        delete itemWidget;
     }
 
-    for (auto i = openServers.begin(); i != openServers.end(); i++)
+    for (auto i = 0; i < !openServers.empty();)
     {
-        delete* i;
+        delete openServers[i];
+        openServers.erase(openServers.begin());
     }
 
     for (auto i = serverInfos.begin(); i != serverInfos.end(); i++)
@@ -236,6 +433,82 @@ void MainWindow::flashServerList()
 void MainWindow::insertServer(const ServerInfo& name)
 {
     openServers.push_back(new OpenServer(name, this, ui->verticalLayout_6, ui->tabWidget));
+}
+
+void MainWindow::saveConfig()
+{
+    auto str = QFileDialog::getSaveFileUrl(this, "保存配置文件", QUrl("./"), "json files (*.json)").toString();
+    if (str.isEmpty())
+        return;
+    std::ofstream outfile(str.toLocal8Bit().data() + 8);
+
+    qjson::JObject json(qjson::JValueType::JList);
+
+    for (auto i = serverInfos.begin(); i != serverInfos.end(); i++)
+    {
+        qjson::JObject locJson;
+        locJson["name"] = i->second.name.toLocal8Bit().data();
+        locJson["ip"] = i->second.ip.toLocal8Bit().data();
+        locJson["port"] = int(i->second.port);
+        locJson["password"] = i->second.passWord.toLocal8Bit().data();
+
+        json.push_back(locJson);
+    }
+
+    outfile << qjson::JWriter::fastFormatWrite(json);
+
+    QMessageBox::information(this, "信息", "保存成功！");
+}
+
+void MainWindow::readConfig()
+{
+    auto str = QFileDialog::getOpenFileUrl(this, "打开配置文件", QUrl("./"), "json files (*.json)").toString();
+    if (str.isEmpty())
+        return;
+    std::ifstream infile(str.toLocal8Bit().data() + 8);
+
+    infile.seekg(0, std::ios_base::end);
+    size_t size = infile.tellg();
+    infile.seekg(0, std::ios_base::beg);
+    char* buffer = new char[size + 1] {0};
+    infile.read(buffer, size);
+    infile.close();
+
+    try
+    {
+        std::unordered_map<std::string, ServerInfo> locServerInfos;
+        qjson::JObject json = qjson::JParser::fastParse(buffer);
+
+        qjson::list_t& list = json.getList();
+
+        for (auto i = list.begin(); i != list.end(); i++)
+        {
+            ServerInfo& info = locServerInfos[(*i)["name"]];
+            info.name = QString::fromLocal8Bit((*i)["name"].getString().c_str());
+            info.ip = QString::fromLocal8Bit((*i)["ip"].getString().c_str());
+            info.port = static_cast<unsigned short>(int((*i)["port"]));
+            info.passWord = QString::fromLocal8Bit((*i)["password"].getString().c_str());
+        }
+
+        serverInfos = std::move(locServerInfos);
+        this->flashServerList();
+        QMessageBox::information(this, "信息", "读取成功！");
+    }
+    catch (const std::exception&)
+    {
+        QMessageBox::warning(this, "警告", "读取配置文件失败！");
+    }
+
+    delete[] buffer;
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    auto get = QMessageBox::question(this, "询问", "是否保存配置文件？", "是", "否");
+    if (get == 0)
+    {
+        this->saveConfig();
+    }
 }
 
 void MainWindow::showServerList()
@@ -284,6 +557,12 @@ void MainWindow::closeTab(int index)
 
 MainWindow::~MainWindow()
 {
+    for (auto i = 0; !openServers.empty();)
+    {
+        delete openServers[i];
+        openServers.erase(openServers.begin());
+    }
+
     delete ui;
 }
 

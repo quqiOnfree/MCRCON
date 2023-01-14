@@ -39,6 +39,9 @@ file(GLOB PROJECT_SOURCES
         "${PROJECT_SOURCE_DIR}/LocalServerManager/*.cpp"
         "${PROJECT_SOURCE_DIR}/LocalServerManager/*.ui"
 
+        "${PROJECT_SOURCE_DIR}/Json/*.h"
+        "${PROJECT_SOURCE_DIR}/Json/*.cpp"
+
         "${PROJECT_SOURCE_DIR}/*.h"
         "${PROJECT_SOURCE_DIR}/*.cpp"
         "${PROJECT_SOURCE_DIR}/*.ui"

@@ -368,14 +368,8 @@ hr { height: 1px; border-width: 0; }
     <property name="title">
      <string>文件</string>
     </property>
-    <widget class="QMenu" name="menuopen_configure">
-     <property name="title">
-      <string>打开配置文件</string>
-     </property>
-     <addaction name="actionC_user_config_json"/>
-    </widget>
     <addaction name="actionsave_configure"/>
-    <addaction name="menuopen_configure"/>
+    <addaction name="actionopen_configure"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -503,13 +497,6 @@ hr { height: 1px; border-width: 0; }
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
          <item>
-          <widget class="QPushButton" name="pushButton_6">
-           <property name="text">
-            <string>Name</string>
-           </property>
-          </widget>
-         </item>
-         <item>
           <spacer name="verticalSpacer_2">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -547,6 +534,11 @@ hr { height: 1px; border-width: 0; }
   <action name="actionServer_options">
    <property name="text">
     <string>服务器选项</string>
+   </property>
+  </action>
+  <action name="actionopen_configure">
+   <property name="text">
+    <string>打开配置文件</string>
    </property>
   </action>
  </widget>

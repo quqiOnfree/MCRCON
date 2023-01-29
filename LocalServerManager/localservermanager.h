@@ -3,7 +3,7 @@
 
 #include <QDialog>
 
-#include "./include/definitions.h"
+#include "./Definition/definitions.h"
 
 namespace Ui {
 	class LocalServerManager;

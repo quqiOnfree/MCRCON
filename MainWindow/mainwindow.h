@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <queue>
 
-#include "./include/definitions.h"
+#include "./Definition/definitions.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }

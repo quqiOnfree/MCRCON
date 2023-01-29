@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <vector>
 
-#include "./include/definitions.h"
+#include "./Definition/definitions.h"
 
 namespace Ui {
 class AddServerDialog;

@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <string>
 
-#include "./include/definitions.h"
+#include "./Definition/definitions.h"
 
 namespace Ui {
 class ServerManageDialog;
